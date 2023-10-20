@@ -99,55 +99,102 @@
         
         // string representation functions
         
-        static secondsString(timeValue, timePrec) {
+        static secondsString(timeValue, timePrec, renderingOptions) {
           if (timeValue < 0) {
-            return TAITime.secondsString(-timeValue, timePrec);
+            return TAITime.secondsString(-timeValue, timePrec, renderingOptions);
           }
           
+          if (!renderingOptions) renderingOptions = {};
+          
           if (timePrec == 0n) {
-            return timeValue + '';
+            if (renderingOptions.integerPadStart) {
+              return (timeValue + '').padStart(renderingOptions.integerPadStart, '0');
+            } else {
+              return timeValue + '';
+            }
           } else {
-            return `${timeValue / 10n ** timePrec}.${(timeValue % 10n ** timePrec + '').padStart(Number(timePrec), '0')}`;
+            let integerString = timeValue / 10n ** timePrec + '';
+            if (renderingOptions.integerPadStart) {
+              integerString = integerString.padStart(renderingOptions.integerPadStart, '0');
+            }
+            return `${integerString}.${(timeValue % 10n ** timePrec + '').padStart(Number(timePrec), '0')}`;
           }
         }
         
-        secondsString_TAI() {
-          return TAITime.secondsString(this.timeValue, this.timePrec);
+        secondsString_UTC(renderingOptions) {
+          // TODO, actually parse leap seconds array and not do kludge
+          return TAITime.secondsString(this.timeValue - BigInt(UTC_TAI_OFFSET_INITIAL + LEAP_SECONDS.length) * 10n ** this.timePrec, this.timePrec, renderingOptions);
         }
         
-        secondsString_TCG_TAI_Offset() {
+        secondsString_TAI(renderingOptions) {
+          return TAITime.secondsString(this.timeValue, this.timePrec, renderingOptions);
+        }
+        
+        secondsString_TAI_Minus_UTC(renderingOptions) {
+          // subtract the two
+          
+          let timeValue = BigInt(UTC_TAI_OFFSET_INITIAL + LEAP_SECONDS.length) * 10n ** this.timePrec;
+          let timePrec = this.timePrec;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_TAI_Minus_UTC_RateOfChange(renderingOptions) {
+          // rate of change
+          
+          let timeValue = 0n;
+          let timePrec = this.timePrec;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_TCG_TAI_Offset(renderingOptions) {
           // multiply TAI time by 1 + 6.969290134e-10 = 1.0000000006969290134 exactly
           
           let timeValue = this.timeValue * 10000000006969290134n;
           let timePrec = this.timePrec + 19n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
-        secondsString_TCG_Minus_TAI() {
+        secondsString_TCG_Minus_TAI(renderingOptions) {
           let timeValue = this.timeValue * 6969290134n;
           let timePrec = this.timePrec + 19n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
-        secondsString_TCB_TAI_Offset() {
+        secondsString_TCG_Minus_TAI_RateOfChange(renderingOptions) {
+          let timeValue = 6969290134n;
+          let timePrec = 19n;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_TCB_TAI_Offset(renderingOptions) {
           // multiply TAI time by 1 + 1.550519768e-08 = 1.00000001550519768 exactly (there is 2 ms of error with this method that periodically varies over milennia but whatever)
           
           let timeValue = this.timeValue * 100000001550519768n;
           let timePrec = this.timePrec + 17n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
-        secondsString_TCB_Minus_TAI() {
+        secondsString_TCB_Minus_TAI(renderingOptions) {
           let timeValue = this.timeValue * 1550519768n;
           let timePrec = this.timePrec + 17n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
-        secondsString_CTRF_TAI_Offset() {
+        secondsString_TCB_Minus_TAI_RateOfChange(renderingOptions) {
+          let timeValue = 1550519768n;
+          let timePrec = 17n;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_CTRF_TAI_Offset(renderingOptions) {
           /*
             to get universe time, stuff will be done.
             
@@ -180,19 +227,29 @@
             
             that was way too much to fit on screen, so doing 32 digits instead:
             1.0000042007550007814267807789307
+            
+            actually, removing 14 more digits, to make number of sig figs equal to solar sys barycenter:
+            1.00000420075500078
           */
           
-          let timeValue = this.timeValue * 10000042007550007814267807789307n;
-          let timePrec = this.timePrec + 31n;
+          let timeValue = this.timeValue * 100000420075500078n;
+          let timePrec = this.timePrec + 17n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
-        secondsString_CTRF_Minus_TAI() {
-          let timeValue = this.timeValue * 42007550007814267807789307n;
-          let timePrec = this.timePrec + 31n;
+        secondsString_CTRF_Minus_TAI(renderingOptions) {
+          let timeValue = this.timeValue * 420075500078n;
+          let timePrec = this.timePrec + 17n;
           
-          return TAITime.secondsString(timeValue, timePrec);
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_CTRF_Minus_TAI_RateOfChange(renderingOptions) {
+          let timeValue = 420075500078n;
+          let timePrec = 17n;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
         // object creation functions
@@ -233,6 +290,10 @@
         print(text) {
           this.ctx.fillText(text, this.textX, this.startingY + this.lineHeight * this.currentLine++);
         }
+        
+        moveToNextLine() {
+          this.currentLine++;
+        }
       }
       
       // renders canvas
@@ -259,15 +320,24 @@
         ctx.font = '1.5rem Consolas';
         ctx.textAlign = 'left';
         let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width * 0.2, canvas.height * 0.12, canvas.height * 0.04);
-        newlinePrinter.print(`Standard JS:                ${now.toISOString()}`);
-        newlinePrinter.print(`JS Seconds:                 ${(now.getTime() / 1e3).toFixed(3)}`);
-        newlinePrinter.print(`TAI Seconds:                ${nowTAI.secondsString_TAI()}`);
-        newlinePrinter.print(`TCG w. TAI Offset Seconds:  ${nowTAI.secondsString_TCG_TAI_Offset()}`);
-        newlinePrinter.print(`TCB w. TAI Offset Seconds:  ${nowTAI.secondsString_TCB_TAI_Offset()}`);
-        newlinePrinter.print(`CTRF w. TAI Offset Seconds: ${nowTAI.secondsString_CTRF_TAI_Offset()}`);
-        newlinePrinter.print(`TCG - TAI Seconds:          ${nowTAI.secondsString_TCG_Minus_TAI()}`);
-        newlinePrinter.print(`TCB - TAI Seconds:          ${nowTAI.secondsString_TCB_Minus_TAI()}`);
-        newlinePrinter.print(`CTRF - TAI Seconds:         ${nowTAI.secondsString_CTRF_Minus_TAI()}`);
+        let renderOpts = { integerPadStart: 10 };
+        newlinePrinter.print(`Standard JS:            ${now.toISOString()}`);
+        newlinePrinter.print(`JS Sec:                 ${(now.getTime() / 1e3).toFixed(3)}`);
+        newlinePrinter.moveToNextLine();
+        newlinePrinter.print(`UTC Sec:                ${nowTAI.secondsString_UTC(renderOpts)}`);
+        newlinePrinter.print(`TAI Sec:                ${nowTAI.secondsString_TAI(renderOpts)}`);
+        newlinePrinter.print(`TAI - UTC Sec:          ${nowTAI.secondsString_TAI_Minus_UTC(renderOpts)}`);
+        newlinePrinter.print(`TAI - UTC ROC Sec:      ${nowTAI.secondsString_TAI_Minus_UTC_RateOfChange(renderOpts)}`);
+        newlinePrinter.moveToNextLine();
+        newlinePrinter.print(`TCG w. TAI Offset Sec:  ${nowTAI.secondsString_TCG_TAI_Offset(renderOpts)}`);
+        newlinePrinter.print(`TCB w. TAI Offset Sec:  ${nowTAI.secondsString_TCB_TAI_Offset(renderOpts)}`);
+        newlinePrinter.print(`CTRF w. TAI Offset Sec: ${nowTAI.secondsString_CTRF_TAI_Offset(renderOpts)}`);
+        newlinePrinter.print(`TCG - TAI Sec:          ${nowTAI.secondsString_TCG_Minus_TAI(renderOpts)}`);
+        newlinePrinter.print(`TCB - TAI Sec:          ${nowTAI.secondsString_TCB_Minus_TAI(renderOpts)}`);
+        newlinePrinter.print(`CTRF - TAI Sec:         ${nowTAI.secondsString_CTRF_Minus_TAI(renderOpts)}`);
+        newlinePrinter.print(`TCG - TAI ROC Sec:      ${nowTAI.secondsString_TCG_Minus_TAI_RateOfChange(renderOpts)}`);
+        newlinePrinter.print(`TCB - TAI ROC Sec:      ${nowTAI.secondsString_TCB_Minus_TAI_RateOfChange(renderOpts)}`);
+        newlinePrinter.print(`CTRF - TAI ROC Sec:     ${nowTAI.secondsString_CTRF_Minus_TAI_RateOfChange(renderOpts)}`);
       }
       
       // render frame loop, intended to only be run once (at page load)
