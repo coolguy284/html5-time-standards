@@ -42,6 +42,47 @@
     <canvas id = 'canvas'></canvas>
     
     <script>
+      /*
+        Time standards explainer:
+        TAI - like UTC but doesn't pause for 1 second for the leap seconds
+        TT - theoretical ideal of TAI, exact rate of time at earth sea level
+        TCG - TT, but with relativistic corrections (linear multiple of TT) to match the rate of time at earth's center (slightly faster than sea level)
+        TCB - time rate at barycenter of solar system, linear multiple of TCG
+        CTRF - time rate of the universe as a whole, in intergalactic space, linear multiple of TCB probably
+      */
+      
+      let UTC_TAI_OFFSET_INITIAL = 10; // seconds
+      let LEAP_SECONDS = [
+        // [date, positive?]
+        ['1972-06-30', true],
+        ['1972-12-31', true],
+        ['1973-12-31', true],
+        ['1974-12-31', true],
+        ['1975-12-31', true],
+        ['1976-12-31', true],
+        ['1977-12-31', true],
+        ['1978-12-31', true],
+        ['1979-12-31', true],
+        ['1981-06-30', true],
+        ['1982-06-30', true],
+        ['1983-06-30', true],
+        ['1985-06-30', true],
+        ['1987-12-31', true],
+        ['1989-12-31', true],
+        ['1990-12-31', true],
+        ['1992-06-30', true],
+        ['1993-06-30', true],
+        ['1994-06-30', true],
+        ['1995-12-31', true],
+        ['1997-06-30', true],
+        ['1998-12-31', true],
+        ['2005-12-31', true],
+        ['2008-12-31', true],
+        ['2012-06-30', true],
+        ['2015-06-30', true],
+        ['2016-12-31', true],
+      ];
+      
       let renderFrameLoopStarted = false;
       
       // TAI seconds object
@@ -49,19 +90,95 @@
         timeValue; // seconds / fraction seconds since 1970, TAI time
         timePrec; // power of 10 precision of stored time
         
+        // basic object creation
+        
         constructor(timeValue, timePrec) {
           this.timeValue = BigInt(timeValue);
           this.timePrec = timePrec >= 0n ? BigInt(timePrec) : 0n;
         }
         
-        secondsString() {
-          if (this.timeValue < 0) {
-            return TAITime(-this.timeValue, this.timePrec).toString();
+        // string representation functions
+        
+        static secondsString(timeValue, timePrec) {
+          if (timeValue < 0) {
+            return TAITime.secondsString(-timeValue, timePrec);
           }
           
           if (timePrec == 0n) {
-            return this.timeValue / 10n ** this.timePrec;
+            return timeValue + '';
+          } else {
+            return `${timeValue / 10n ** timePrec}.${(timeValue % 10n ** timePrec + '').padStart(Number(timePrec), '0')}`;
           }
+        }
+        
+        secondsString_TAI() {
+          return TAITime.secondsString(this.timeValue, this.timePrec);
+        }
+        
+        secondsString_TCG_TAI_Offset() {
+          // multiply TAI time by 1 + 6.969290134e-10 = 1.0000000006969290134 exactly
+          
+          let timeValue = this.timeValue * 10000000006969290134n;
+          let timePrec = this.timePrec + 19n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
+        secondsString_TCB_TAI_Offset() {
+          // multiply TAI time by 1 + 1.550519768e-08 = 1.00000001550519768 exactly (there is 2 ms of error with this method that periodically varies over milennia but whatever)
+          
+          let timeValue = this.timeValue * 100000001550519768n;
+          let timePrec = this.timePrec + 17n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
+        secondsString_CTRF_TAI_Offset() {
+          // to get universe time, stuff will be done.
+          
+          // thank you https://www.quora.com/How-much-faster-would-an-atomic-clock-in-intergalactic-space-run-compared-to-one-on-the-surface-of-the-Earth
+          // i'm doing it much more precisely though :)
+          
+          /*
+            formula for time dialation: sqrt(1 - (v / c) ^ 2); v can be moving velocity, or it can be escape velocity in the case of gravitational time dialation, the formula works either case
+            
+            start with TT to solar system barycenter scaling factor of 1.00000001550519768 because smart people probably made it pretty accurate (SCALING FACTOR 1)
+            
+            then add scaling factor of solar system's velocity in the milky way
+            https://en.wikipedia.org/wiki/Galactic_year
+            solar system speed rel to milky way: 230 km/s
+            
+            then add scaling factor of our current milky way position to intergalactic space
+            https://www.quora.com/How-much-faster-would-an-atomic-clock-in-intergalactic-space-run-compared-to-one-on-the-surface-of-the-Earth
+            escape velocity of milky way: 550 km/s
+            
+            then add scaling factor of milky way's speed relative to cmb
+            https://en.wikipedia.org/wiki/Milky_Way
+            milky way speed rel to cmb: 630 km/s
+            
+            calculations done using
+            https://coolguy284.com/misc/old/tools/calculator.html
+            with expression
+            1d / ((1d / 1.00000001550519768d) * sqrt(1d-(230000d/299792458d)^2d) * sqrt(1d-(550000d/299792458d)^2d) * sqrt(1d-(630000d/299792458d)^2d))
+            
+            final scaling factor of TT relative to CTRF (with 64 digits of precision):
+            1.000004200755000781426780778930763826847435383781271650983748724
+            
+            that was way too much to fit on screen, so doing 32 digits instead:
+            1.0000042007550007814267807789307
+          */
+          
+          let timeValue = this.timeValue * 10000042007550007814267807789307n;
+          let timePrec = this.timePrec + 31n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
+        // object creation functions
+        
+        static fromUTCDateObject(dateObj) {
+          // TODO, actually parse leap seconds array and not do kludge
+          return new TAITime(BigInt(dateObj.getTime()) + BigInt(UTC_TAI_OFFSET_INITIAL + LEAP_SECONDS.length) * 1000n, 3n);
         }
       }
       
@@ -105,8 +222,11 @@
         // clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // get current date time
+        // get current moment
         let now = new Date();
+        
+        // convert to TAI time object
+        let nowTAI = TAITime.fromUTCDateObject(now);
         
         // put data on screen
         ctx.fillStyle = 'white';
@@ -119,7 +239,11 @@
         ctx.textAlign = 'center';
         let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width / 2, canvas.height * 0.12, canvas.height * 0.04);
         newlinePrinter.print(`Standard JS: ${now.toISOString()}`);
-        newlinePrinter.print(`Standard JS: ${now.toISOString()}`);
+        newlinePrinter.print(`JS Seconds: ${(now.getTime() / 1e3).toFixed(3)}`);
+        newlinePrinter.print(`TAI Seconds: ${nowTAI.secondsString_TAI()}`);
+        newlinePrinter.print(`TCG w. TAI Offset Seconds: ${nowTAI.secondsString_TCG_TAI_Offset()}`);
+        newlinePrinter.print(`TCB w. TAI Offset Seconds: ${nowTAI.secondsString_TCB_TAI_Offset()}`);
+        newlinePrinter.print(`CTRF w. TAI Offset Seconds: ${nowTAI.secondsString_CTRF_TAI_Offset()}`);
       }
       
       // render frame loop, intended to only be run once (at page load)
