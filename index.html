@@ -49,6 +49,7 @@
         TCG - TT, but with relativistic corrections (linear multiple of TT) to match the rate of time at earth's center (slightly faster than sea level)
         TCB - time rate at barycenter of solar system, linear multiple of TCG
         CTRF - time rate of the universe as a whole, in intergalactic space, linear multiple of TCB probably
+        NARN - time rate of narnia, just for fun
       */
       
       let UTC_TAI_OFFSET_INITIAL = 10; // seconds
@@ -108,14 +109,14 @@
           
           if (timePrec == 0n) {
             if (renderingOptions.integerPadStart) {
-              return (timeValue + '').padStart(renderingOptions.integerPadStart, '0');
+              return (timeValue + '').padStart(renderingOptions.integerPadStart, renderingOptions.integerPadStartCharacter);
             } else {
               return timeValue + '';
             }
           } else {
             let integerString = timeValue / 10n ** timePrec + '';
             if (renderingOptions.integerPadStart) {
-              integerString = integerString.padStart(renderingOptions.integerPadStart, '0');
+              integerString = integerString.padStart(renderingOptions.integerPadStart, renderingOptions.integerPadStartCharacter);
             }
             return `${integerString}.${(timeValue % 10n ** timePrec + '').padStart(Number(timePrec), '0')}`;
           }
@@ -252,6 +253,25 @@
           return TAITime.secondsString(timeValue, timePrec, renderingOptions);
         }
         
+        secondsString_NARN(renderingOptions) {
+          /*
+            https://narnia.fandom.com/wiki/Narnian_Time
+            average factor is 52.14
+          */
+          
+          let timeValue = this.timeValue * 5214n;
+          let timePrec = this.timePrec + 2n;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
+        secondsString_NARN_Rel_TAI_RateOfChange(renderingOptions) {
+          let timeValue = 5214n;
+          let timePrec = 2n;
+          
+          return TAITime.secondsString(timeValue, timePrec, renderingOptions);
+        }
+        
         // object creation functions
         
         static fromUTCDateObject(dateObj) {
@@ -320,9 +340,10 @@
         ctx.font = '1.5rem Consolas';
         ctx.textAlign = 'left';
         let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width * 0.2, canvas.height * 0.12, canvas.height * 0.04);
-        let renderOpts = { integerPadStart: 10 };
-        newlinePrinter.print(`Standard JS:            ${now.toISOString()}`);
-        newlinePrinter.print(`JS Sec:                 ${(now.getTime() / 1e3).toFixed(3)}`);
+        let renderOpts = { integerPadStart: 11 };
+        let renderOptsNarn = { integerPadStart: 13 };
+        newlinePrinter.print(`Standard JS:             ${now.toISOString()}`);
+        newlinePrinter.print(`JS Sec:                 ${(now.getTime() / 1e3).toFixed(3).padStart(15)}`);
         newlinePrinter.moveToNextLine();
         newlinePrinter.print(`UTC Sec:                ${nowTAI.secondsString_UTC(renderOpts)}`);
         newlinePrinter.print(`TAI Sec:                ${nowTAI.secondsString_TAI(renderOpts)}`);
@@ -338,6 +359,9 @@
         newlinePrinter.print(`TCG - TAI ROC Sec:      ${nowTAI.secondsString_TCG_Minus_TAI_RateOfChange(renderOpts)}`);
         newlinePrinter.print(`TCB - TAI ROC Sec:      ${nowTAI.secondsString_TCB_Minus_TAI_RateOfChange(renderOpts)}`);
         newlinePrinter.print(`CTRF - TAI ROC Sec:     ${nowTAI.secondsString_CTRF_Minus_TAI_RateOfChange(renderOpts)}`);
+        newlinePrinter.moveToNextLine();
+        newlinePrinter.print(`NARN Sec:             ${nowTAI.secondsString_NARN(renderOptsNarn)}`);
+        newlinePrinter.print(`NARN ROC Sec:         ${nowTAI.secondsString_NARN_Rel_TAI_RateOfChange(renderOptsNarn)}`);
       }
       
       // render frame loop, intended to only be run once (at page load)
