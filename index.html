@@ -100,9 +100,9 @@
         
         // string representation functions
         
-        static secondsString(timeValue, timePrec, renderingOptions) {
+        static secondsString_Internal(timeValue, timePrec, renderingOptions) {
           if (timeValue < 0) {
-            return TAITime.secondsString(-timeValue, timePrec, renderingOptions);
+            return TAITime.secondsString_Internal(-timeValue, timePrec, renderingOptions);
           }
           
           if (!renderingOptions) renderingOptions = {};
@@ -120,6 +120,32 @@
             }
             return `${integerString}.${(timeValue % 10n ** timePrec + '').padStart(Number(timePrec), '0')}`;
           }
+        }
+        
+        static #splitIntoGroupsOf3(string) {
+          let resultStrings = [];
+          
+          for (let i = 0; i < string.length; i += 3) {
+            resultStrings.push(string.slice(i, i + 3));
+          }
+          
+          return resultStrings.join(' ');
+        }
+        
+        static secondsString(timeValue, timePrec, renderingOptions) {
+          let resultantString = TAITime.secondsString_Internal(timeValue, timePrec, renderingOptions);;
+          
+          // add spaces every 3 digits left and right of decimal point (international standard notation)
+          
+          let resultantStrings = resultantString.split('.');
+          
+          resultantStrings[0] = this.#splitIntoGroupsOf3(resultantStrings[0].split('').reverse().join('')).split('').reverse().join('');
+          
+          if (resultantStrings.length > 1) {
+            resultantStrings[1] = this.#splitIntoGroupsOf3(resultantStrings[1]);
+          }
+          
+          return resultantStrings.join('.');
         }
         
         secondsString_UTC(renderingOptions) {
@@ -360,8 +386,8 @@
         newlinePrinter.print(`TCB - TAI ROC Sec:      ${nowTAI.secondsString_TCB_Minus_TAI_RateOfChange(renderOpts)}`);
         newlinePrinter.print(`CTRF - TAI ROC Sec:     ${nowTAI.secondsString_CTRF_Minus_TAI_RateOfChange(renderOpts)}`);
         newlinePrinter.moveToNextLine();
-        newlinePrinter.print(`NARN Sec:             ${nowTAI.secondsString_NARN(renderOptsNarn)}`);
-        newlinePrinter.print(`NARN ROC Sec:         ${nowTAI.secondsString_NARN_Rel_TAI_RateOfChange(renderOptsNarn)}`);
+        newlinePrinter.print(`NARN Sec:            ${nowTAI.secondsString_NARN(renderOptsNarn)}`);
+        newlinePrinter.print(`NARN ROC Sec:        ${nowTAI.secondsString_NARN_Rel_TAI_RateOfChange(renderOptsNarn)}`);
       }
       
       // render frame loop, intended to only be run once (at page load)
