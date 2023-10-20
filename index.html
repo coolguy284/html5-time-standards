@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset = 'utf-8'>
+    
+    <title>HTML5 Time Standards</title>
+    
+    <meta name = 'viewport' content = 'width=device-width, initial-scale=1.0'>
+    
+    <style>
+      /* general declarations */
+      
+      html, body, body *:not(script, table, thead, tbody, tr, th, td) {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: stretch;
+        flex-grow: 1;
+        flex-shrink: 1;
+        min-height: 0;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: white;
+        font-family: Arial;
+      }
+      
+      /* element specific declarations */
+      
+      #canvas {
+        background-color: black;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <canvas id = 'canvas'></canvas>
+    
+    <script>
+      let renderFrameLoopStarted = false;
+      
+      // TAI seconds object
+      class TAITime {
+        timeValue; // seconds / fraction seconds since 1970, TAI time
+        timePrec; // power of 10 precision of stored time
+        
+        constructor(timeValue, timePrec) {
+          this.timeValue = BigInt(timeValue);
+          this.timePrec = timePrec >= 0n ? BigInt(timePrec) : 0n;
+        }
+        
+        secondsString() {
+          if (this.timeValue < 0) {
+            return TAITime(-this.timeValue, this.timePrec).toString();
+          }
+          
+          if (timePrec == 0n) {
+            return this.timeValue / 10n ** this.timePrec;
+          }
+        }
+      }
+      
+      // sets canvas pixel width and height to its css width and height
+      function resetCanvasSize() {
+        let canvasStyle = getComputedStyle(canvas);
+        
+        let canvasWidth = parseInt(canvasStyle.width);
+        let canvasHeight = parseInt(canvasStyle.height);
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+      }
+      
+      // puts text on new lines
+      class TextNewlinePrinter {
+        ctx;
+        
+        textX;
+        startingY;
+        lineHeight;
+        currentLine = 0;
+        
+        constructor(ctx, textX, startingY, lineHeight) {
+          this.ctx = ctx;
+          this.textX = textX;
+          this.startingY = startingY;
+          this.lineHeight = lineHeight;
+        }
+        
+        print(text) {
+          this.ctx.fillText(text, this.textX, this.startingY + this.lineHeight * this.currentLine++);
+        }
+      }
+      
+      // renders canvas
+      function renderFrame() {
+        // get context
+        let ctx = canvas.getContext('2d');
+        
+        // clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // get current date time
+        let now = new Date();
+        
+        // put data on screen
+        ctx.fillStyle = 'white';
+        ctx.font = '3rem Consolas';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Time', canvas.width / 2, canvas.height * 0.05);
+        
+        ctx.font = '1.5rem Consolas';
+        ctx.textAlign = 'center';
+        let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width / 2, canvas.height * 0.12, canvas.height * 0.04);
+        newlinePrinter.print(`Standard JS: ${now.toISOString()}`);
+        newlinePrinter.print(`Standard JS: ${now.toISOString()}`);
+      }
+      
+      // render frame loop, intended to only be run once (at page load)
+      async function renderFrameLoop() {
+        if (renderFrameLoopStarted) return;
+        
+        renderFrameLoopStarted = true;
+        
+        while (true) {
+          renderFrame();
+          
+          await new Promise(r => requestAnimationFrame(r));
+        }
+      }
+      
+      // register event listeners
+      addEventListener('load', () => {
+        resetCanvasSize();
+        
+        // start the rendering frame loop
+        renderFrameLoop();
+      });
+
+      addEventListener('resize', () => {
+        resetCanvasSize();
+      });
+    </script>
+  </body>
+</html>
