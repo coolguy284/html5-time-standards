@@ -124,6 +124,13 @@
           return TAITime.secondsString(timeValue, timePrec);
         }
         
+        secondsString_TCG_Minus_TAI() {
+          let timeValue = this.timeValue * 6969290134n;
+          let timePrec = this.timePrec + 19n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
         secondsString_TCB_TAI_Offset() {
           // multiply TAI time by 1 + 1.550519768e-08 = 1.00000001550519768 exactly (there is 2 ms of error with this method that periodically varies over milennia but whatever)
           
@@ -133,13 +140,20 @@
           return TAITime.secondsString(timeValue, timePrec);
         }
         
+        secondsString_TCB_Minus_TAI() {
+          let timeValue = this.timeValue * 1550519768n;
+          let timePrec = this.timePrec + 17n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
         secondsString_CTRF_TAI_Offset() {
-          // to get universe time, stuff will be done.
-          
-          // thank you https://www.quora.com/How-much-faster-would-an-atomic-clock-in-intergalactic-space-run-compared-to-one-on-the-surface-of-the-Earth
-          // i'm doing it much more precisely though :)
-          
           /*
+            to get universe time, stuff will be done.
+            
+            thank you https://www.quora.com/How-much-faster-would-an-atomic-clock-in-intergalactic-space-run-compared-to-one-on-the-surface-of-the-Earth
+            i'm doing it much more precisely though :)
+            
             formula for time dialation: sqrt(1 - (v / c) ^ 2); v can be moving velocity, or it can be escape velocity in the case of gravitational time dialation, the formula works either case
             
             start with TT to solar system barycenter scaling factor of 1.00000001550519768 because smart people probably made it pretty accurate (SCALING FACTOR 1)
@@ -169,6 +183,13 @@
           */
           
           let timeValue = this.timeValue * 10000042007550007814267807789307n;
+          let timePrec = this.timePrec + 31n;
+          
+          return TAITime.secondsString(timeValue, timePrec);
+        }
+        
+        secondsString_CTRF_Minus_TAI() {
+          let timeValue = this.timeValue * 42007550007814267807789307n;
           let timePrec = this.timePrec + 31n;
           
           return TAITime.secondsString(timeValue, timePrec);
@@ -236,14 +257,17 @@
         ctx.fillText('Time', canvas.width / 2, canvas.height * 0.05);
         
         ctx.font = '1.5rem Consolas';
-        ctx.textAlign = 'center';
-        let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width / 2, canvas.height * 0.12, canvas.height * 0.04);
-        newlinePrinter.print(`Standard JS: ${now.toISOString()}`);
-        newlinePrinter.print(`JS Seconds: ${(now.getTime() / 1e3).toFixed(3)}`);
-        newlinePrinter.print(`TAI Seconds: ${nowTAI.secondsString_TAI()}`);
-        newlinePrinter.print(`TCG w. TAI Offset Seconds: ${nowTAI.secondsString_TCG_TAI_Offset()}`);
-        newlinePrinter.print(`TCB w. TAI Offset Seconds: ${nowTAI.secondsString_TCB_TAI_Offset()}`);
+        ctx.textAlign = 'left';
+        let newlinePrinter = new TextNewlinePrinter(ctx, canvas.width * 0.2, canvas.height * 0.12, canvas.height * 0.04);
+        newlinePrinter.print(`Standard JS:                ${now.toISOString()}`);
+        newlinePrinter.print(`JS Seconds:                 ${(now.getTime() / 1e3).toFixed(3)}`);
+        newlinePrinter.print(`TAI Seconds:                ${nowTAI.secondsString_TAI()}`);
+        newlinePrinter.print(`TCG w. TAI Offset Seconds:  ${nowTAI.secondsString_TCG_TAI_Offset()}`);
+        newlinePrinter.print(`TCB w. TAI Offset Seconds:  ${nowTAI.secondsString_TCB_TAI_Offset()}`);
         newlinePrinter.print(`CTRF w. TAI Offset Seconds: ${nowTAI.secondsString_CTRF_TAI_Offset()}`);
+        newlinePrinter.print(`TCG - TAI Seconds:          ${nowTAI.secondsString_TCG_Minus_TAI()}`);
+        newlinePrinter.print(`TCB - TAI Seconds:          ${nowTAI.secondsString_TCB_Minus_TAI()}`);
+        newlinePrinter.print(`CTRF - TAI Seconds:         ${nowTAI.secondsString_CTRF_Minus_TAI()}`);
       }
       
       // render frame loop, intended to only be run once (at page load)
