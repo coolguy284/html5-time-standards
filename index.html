@@ -178,6 +178,7 @@
         
         secondsString_TCG_TAI_Offset(renderingOptions) {
           // multiply TAI time by 1 + 6.969290134e-10 = 1.0000000006969290134 exactly
+          // edit: this is inaccurate, it should be divided instead
           
           let timeValue = this.timeValue * 10000000006969290134n;
           let timePrec = this.timePrec + 19n;
@@ -201,6 +202,7 @@
         
         secondsString_TCB_TAI_Offset(renderingOptions) {
           // multiply TAI time by 1 + 1.550519768e-08 = 1.00000001550519768 exactly (there is 2 ms of error with this method that periodically varies over milennia but whatever)
+          // edit: this is inaccurate, the variation is seasonal not millenial
           
           let timeValue = this.timeValue * 100000001550519768n;
           let timePrec = this.timePrec + 17n;
